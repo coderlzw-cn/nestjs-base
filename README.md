@@ -96,3 +96,211 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# NestJS Base Project
+
+一个基于 NestJS 的后端项目模板，集成了常用的功能和最佳实践。
+
+## 主要特性
+
+- 🚀 **NestJS 框架**: 基于最新的 NestJS 框架
+- 🔐 **JWT 认证**: 完整的 JWT 认证系统
+- 🗄️ **数据库集成**: TypeORM 与 MySQL 集成
+- 📝 **API 文档**: Swagger/OpenAPI 文档自动生成
+- 🌐 **国际化**: 多语言支持
+- 🛡️ **安全**: 内置安全防护措施
+- 📊 **缓存**: Redis 缓存支持
+- ⏰ **定时任务**: 定时任务调度
+- 🧪 **测试**: 完整的测试配置
+
+## 快速开始
+
+### 安装依赖
+
+```bash
+pnpm install
+```
+
+### 环境配置
+
+复制 `.env.example` 文件为 `.env` 并配置相关环境变量：
+
+```bash
+cp .env.example .env
+```
+
+### 运行项目
+
+```bash
+# 开发模式
+pnpm run start:dev
+
+# 生产模式
+pnpm run start:prod
+```
+
+## API 文档
+
+启动项目后，访问 `http://localhost:3000/api` 查看 Swagger API 文档。
+
+## 项目结构
+
+```
+src/
+├── common/           # 公共模块
+│   ├── decorators/   # 自定义装饰器
+│   ├── exceptions/   # 异常处理
+│   ├── filters/      # 异常过滤器
+│   ├── guards/       # 守卫
+│   ├── interceptors/ # 拦截器
+│   ├── middleware/   # 中间件
+│   └── pipes/        # 管道
+├── config/           # 配置文件
+├── modules/          # 业务模块
+│   ├── auth/         # 认证模块
+│   └── user/         # 用户模块
+├── shared/           # 共享模块
+└── main.ts           # 应用入口
+```
+
+## ApiEndpoint 装饰器
+
+项目提供了一个强大的 `ApiEndpoint` 装饰器，用于简化 Swagger 文档的生成。
+
+### 基本用法
+
+```typescript
+import { ApiEndpoint } from 'src/common/decorators/api-response.decorator';
+import { User } from './entities/user.entity';
+
+@Get(':id')
+@ApiEndpoint({
+  summary: '获取用户信息',
+  description: '根据用户ID获取用户详细信息',
+  tags: ['用户管理'],
+  params: [
+    { name: 'id', description: '用户ID', type: 'number', example: 1 }
+  ],
+  response: { type: User, status: 200 }
+})
+findOne(@Param('id') id: string) {
+  return this.userService.findOne(+id);
+}
+```
+
+### 分页用法
+
+```typescript
+@Get()
+@ApiEndpoint({
+  summary: '获取用户列表',
+  tags: ['用户管理'],
+  pagination: { enabled: true },
+  response: { type: User, isArray: true }
+})
+findAll(@Query() query: any) {
+  return this.userService.findAll(query);
+}
+```
+
+### 自定义 Schema
+
+```typescript
+@Get('stats')
+@ApiEndpoint({
+  summary: '获取用户统计',
+  tags: ['用户管理'],
+  response: {
+    schema: {
+      type: 'object',
+      properties: {
+        totalUsers: { type: 'number', example: 100 },
+        activeUsers: { type: 'number', example: 80 }
+      }
+    }
+  }
+})
+getStats() {
+  return this.userService.getStats();
+}
+```
+
+### 简化装饰器
+
+```typescript
+// 简单装饰器
+@ApiEndpointSimple('获取用户信息', User)
+
+// 分页装饰器
+@ApiEndpointPaginated('获取用户列表', User)
+```
+
+更多详细用法请参考 `src/common/decorators/api-response-usage.md`。
+
+## 开发指南
+
+### 添加新模块
+
+1. 在 `src/modules/` 下创建新模块目录
+2. 创建模块文件、控制器、服务等
+3. 在 `app.module.ts` 中导入新模块
+
+### 添加新的装饰器
+
+1. 在 `src/common/decorators/` 下创建装饰器文件
+2. 导出装饰器函数
+3. 在需要的地方导入使用
+
+### 数据库迁移
+
+```bash
+# 生成迁移文件
+pnpm run migration:generate
+
+# 运行迁移
+pnpm run migration:run
+```
+
+## 测试
+
+```bash
+# 单元测试
+pnpm run test
+
+# E2E 测试
+pnpm run test:e2e
+
+# 测试覆盖率
+pnpm run test:cov
+```
+
+## 部署
+
+### Docker 部署
+
+```bash
+# 构建镜像
+docker build -t nestjs-base .
+
+# 运行容器
+docker run -p 3000:3000 nestjs-base
+```
+
+### 生产环境配置
+
+1. 设置 `NODE_ENV=production`
+2. 配置生产环境数据库
+3. 配置 Redis 连接
+4. 设置 JWT 密钥
+
+## 贡献
+
+1. Fork 项目
+2. 创建功能分支
+3. 提交更改
+4. 推送到分支
+5. 创建 Pull Request
+
+## 许可证
+
+MIT License

@@ -46,6 +46,27 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
     };
   }
 
+  static pagination<T>(
+    data: T,
+    page: number,
+    pageSize: number,
+    total: number,
+  ): CustomResponse<{
+    list: T;
+    currentPage: number;
+    pageSize: number;
+    total: number;
+  }> {
+    return {
+      data: {
+        list: data,
+        currentPage: page,
+        pageSize,
+        total,
+      },
+    };
+  }
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
     return next.handle().pipe(
       map((data: CustomResponse<T> | T) => {

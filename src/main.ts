@@ -31,8 +31,10 @@ const swaggerBootstrap = (app: INestApplication, env: string) => {
     .setContact('John Doe', 'https://github.com/johndoe', 'john.doe@example.com')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerOptions);
-  SwaggerModule.setup('api', app, document, {
+  const document = SwaggerModule.createDocument(app, swaggerOptions, {
+    // extraModels: [User, AuthProviders, Role, Permission, UserRole, RolePermission], // 明确包含所有实体
+  });
+  SwaggerModule.setup('swagger', app, document, {
     raw: env === 'dev',
     ui: env === 'dev',
     explorer: true,
@@ -78,8 +80,8 @@ async function bootstrap() {
   // 全局管道
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // 去除 DTO 中未声明的字段
-      forbidNonWhitelisted: true, // 禁止 DTO 中未声明字段直接抛异常
+      // whitelist: true, // 去除 DTO 中未声明的字段
+      // forbidNonWhitelisted: true, // 禁止 DTO 中未声明字段直接抛异常
       transform: true, // 自动转换 payload 为 DTO 类型
     }),
   );
@@ -103,6 +105,6 @@ async function bootstrap() {
   await app.listen(port, host);
   Logger.log(`🚀 NODE_ENV: ${env}`);
   Logger.log(`🚀 Server is running on http://${host}:${port}`);
-  Logger.log(`🚀 Swagger is running on http://${host}:${port}/api`);
+  Logger.log(`🚀 Swagger is running on http://${host}:${port}/swagger`);
 }
 void bootstrap();

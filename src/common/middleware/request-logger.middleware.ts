@@ -7,6 +7,12 @@ export function RequestLoggerMiddleware(req: Request, res: Response, next: NextF
   // 获取客户端真实 IP（处理反向代理的情况）
   const ip = req.headers['x-forwarded-for']?.toString().split(',')[0] || req.socket.remoteAddress;
 
+  // 不统计swagger的请求
+  if (req.originalUrl.startsWith('/swagger')) {
+    next();
+    return;
+  }
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     const method = req.method;

@@ -303,4 +303,249 @@ getProfile(@CurrentUser() user: User) {
 3. **自动错误响应**: 自动添加常见的错误响应
 4. **向后兼容**: 保留原有的简化装饰器
 5. **易于维护**: 集中管理 API 文档配置
-6. **减少重复**: 避免重复编写多个装饰器 
+6. **减少重复**: 避免重复编写多个装饰器
+
+# ApiEndpoint 装饰器使用指南
+
+## 概述
+
+`ApiEndpoint` 装饰器是一个强大的 Swagger 文档生成工具，它将多个 Swagger 装饰器组合在一起，提供统一的 API 文档配置。支持实体类、DTO 类和自定义 schema。
+
+## 基本用法
+
+### 1. 简单响应
+
+```typescript
+import { ApiEndpoint } from 'src/common/decorators/api-response.decorator';
+import { User } from './entities/user.entity';
+
+@Get(':id')
+@ApiEndpoint({
+  summary: '获取用户信息',
+  description: '根据用户ID获取用户详细信息',
+  tags: ['用户管理'],
+  params: [
+    { name: 'id', description: '用户ID', type: 'number', example: 1 }
+  ],
+  response: { type: User, status: 200 }
+})
+findOne(@Param('id') id: string) {
+  return this.userService.findOne(+id);
+}
+```
+
+### 2. 数组响应
+
+```typescript
+@Get()
+@ApiEndpoint({
+  summary: '获取所有用户',
+  tags: ['用户管理'],
+  response: { type: User, isArray: true }
+})
+findAll() {
+  return this.userService.findAll();
+}
+```
+
+### 3. 分页响应
+
+```typescript
+@Get()
+@ApiEndpoint({
+  summary: '获取用户列表',
+  tags: ['用户管理'],
+  pagination: { enabled: true },
+  response: { type: User, isArray: true }
+})
+findAll(@Query() query: any) {
+  return this.userService.findAll(query);
+}
+```
+
+### 4. 自定义 Schema
+
+```typescript
+@Get('stats')
+@ApiEndpoint({
+  summary: '获取用户统计',
+  tags: ['用户管理'],
+  response: {
+    schema: {
+      type: 'object',
+      properties: {
+        totalUsers: { type: 'number', example: 100 },
+        activeUsers: { type: 'number', example: 80 },
+        newUsers: { type: 'number', example: 10 }
+      }
+    }
+  }
+})
+getStats() {
+  return this.userService.getStats();
+}
+```
+
+### 5. 带请求体的 API
+
+```typescript
+import { CreateUserDto } from './dto/create-user.dto';
+
+@Post()
+@ApiEndpoint({
+  summary: '创建用户',
+  tags: ['用户管理'],
+  body: CreateUserDto,
+  response: { type: User, status: 201 }
+})
+create(@Body() createUserDto: CreateUserDto) {
+  return this.userService.create(createUserDto);
+}
+```
+
+### 6. 带查询参数的 API
+
+```typescript
+@Get('search')
+@ApiEndpoint({
+  summary: '搜索用户',
+  tags: ['用户管理'],
+  queries: [
+    { name: 'keyword', description: '搜索关键词', type: 'string', example: 'john' },
+    { name: 'category', description: '用户分类', type: 'string', enum: ['vip', 'normal'], example: 'vip' }
+  ],
+  response: { type: User, isArray: true }
+})
+search(@Query() query: any) {
+  return this.userService.search(query);
+}
+```
+
+## 简化装饰器
+
+### ApiEndpointSimple
+
+用于简单的 API 端点：
+
+```typescript
+import { ApiEndpointSimple } from 'src/common/decorators/api-response.decorator';
+
+@Get(':id')
+@ApiEndpointSimple('获取用户信息', User)
+findOne(@Param('id') id: string) {
+  return this.userService.findOne(+id);
+}
+```
+
+### ApiEndpointPaginated
+
+用于分页 API 端点：
+
+```typescript
+import { ApiEndpointPaginated } from 'src/common/decorators/api-response.decorator';
+
+@Get()
+@ApiEndpointPaginated('获取用户列表', User)
+findAll(@Query() query: any) {
+  return this.userService.findAll(query);
+}
+```
+
+## 配置选项
+
+### ApiEndpointConfig
+
+```typescript
+interface ApiEndpointConfig<TModel = any, TCreateDto = any, TUpdateDto = any> {
+  summary: string;                    // API 摘要
+  description?: string;               // API 详细描述
+  tags?: string[];                    // API 标签
+  params?: ApiParamConfig[];          // 路径参数
+  queries?: ApiQueryConfig[];         // 查询参数
+  headers?: ApiHeaderConfig[];        // 请求头
+  body?: Type<TCreateDto> | Type<TUpdateDto>;  // 请求体类型
+  response?: ResponseConfig<TModel>;  // 响应配置
+  deprecated?: boolean;               // 是否已弃用
+  pagination?: PaginationConfig;      // 分页配置
+  status?: number;                    // 响应状态码（兼容旧版本）
+  responseDescription?: string;       // 响应描述（兼容旧版本）
+}
+```
+
+### ResponseConfig
+
+```typescript
+interface ResponseConfig<TModel = any> {
+  type?: Type<TModel>;                // 响应类型
+  isArray?: boolean;                  // 是否为数组
+  schema?: Record<string, unknown>;   // 自定义 schema
+  description?: string;               // 响应描述
+  status?: number;                    // 响应状态码
+}
+```
+
+### PaginationConfig
+
+```typescript
+interface PaginationConfig {
+  enabled: boolean;                   // 是否启用分页
+  defaultPage?: number;               // 默认页码
+  defaultLimit?: number;              // 默认每页数量
+  maxLimit?: number;                  // 最大每页数量
+  pageParam?: string;                 // 页码参数名
+  limitParam?: string;                // 每页数量参数名
+  searchParam?: string;               // 搜索参数名
+  sortParam?: string;                 // 排序参数名
+}
+```
+
+## 响应格式
+
+### 标准响应格式
+
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    // 响应数据
+  }
+}
+```
+
+### 分页响应格式
+
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "list": [
+      // 数据列表
+    ],
+    "total": 100,
+    "page": 1,
+    "pageSize": 10,
+    "pages": 10
+  }
+}
+```
+
+## 错误响应
+
+装饰器会自动添加以下错误响应：
+
+- 400: 请求参数错误
+- 401: 未授权
+- 403: 禁止访问
+- 404: 资源不存在
+- 500: 服务器内部错误
+
+## 最佳实践
+
+1. **使用实体类作为响应类型**：确保实体类有正确的 `@ApiProperty` 装饰器
+2. **使用 DTO 作为请求体**：确保 DTO 有正确的验证装饰器
+3. **合理使用标签**：将相关的 API 分组到同一个标签下
+4. **提供详细的描述**：帮助其他开发者理解 API 的用途
+5. **使用示例值**：为参数提供有意义的示例值
+6. **启用分页**：对于列表 API，建议启用分页功能 

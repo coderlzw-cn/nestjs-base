@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { TransformInterceptor } from 'src/common/interceptors/transform.interceptor';
+import { Like, Not, Repository } from 'typeorm';
+import { SignUpDto } from '../auth/dto/sign-up.dto';
+import { FindUserDto } from './dto/find-user.dto';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -13,28 +13,35 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(): Promise<User> {
-    await this.userRepository.delete({
-      username: 'admin',
-    });
-
-    const user = new User({
-      username: 'admin',
-      password: '123456',
-      email: 'admin@example.com',
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  /**
+   * 注册用户
+   * @param signUpDto
+   * @returns
+   */
+  register(signUpDto: SignUpDto) {
+    const user = new User(signUpDto);
     const userEntity = this.userRepository.create(user);
     return this.userRepository.save(userEntity);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(findUserDto: FindUserDto, user: User) {
+    const { page, pageSize } = findUserDto;
+    const condition = {
+      where: {
+        // id: Not(user.id),
+        username: findUserDto.username ? Like(`%${findUserDto.username}%`) : undefined,
+      },
+    };
+    const [users, total] = await this.userRepository.findAndCount({
+      ...condition,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      relations: ['roles.role'],
+    });
+    return TransformInterceptor.pagination(users, page, pageSize, total);
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -42,27 +49,41 @@ export class UserService {
     return user;
   }
 
-  async findByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { username } });
+  findByUsernameOrEmail(value: string) {
+    this.userRepository
+      .findOne({
+        where: [{ username: value }, { email: value }],
+        relations: ['userRoles.role'],
+      })
+      .then((user) => {
+        console.log(user);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+    return this.userRepository.findOne({
+      where: [{ username: value }, { email: value }],
+      relations: ['userRoles.role'],
+    });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+  /**
+   * 获取用户及其角色信息
+   */
+  async findUserWithRoles(userId: string) {
+    return this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['userRoles.role'],
+    });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.findOne(id);
-
-    if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
-    }
-
-    Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
-  }
-
-  async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
-    await this.userRepository.remove(user);
+  /**
+   * 获取用户及其角色和权限信息
+   */
+  async findUserWithRolesAndPermissions(userId: string) {
+    return this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['userRoles.role', 'userRoles.role.rolePermissions.permission'],
+    });
   }
 }

@@ -6,7 +6,17 @@ export const jwtConfigurationValidationSchema = {
   JWT_EXPIRES_IN: Joi.string().required(),
 };
 
+export const jwtRefreshConfigurationValidationSchema = {
+  JWT_REFRESH_SECRET: Joi.string().required(),
+  JWT_REFRESH_EXPIRES_IN: Joi.string().required(),
+};
+
 export const jwtConfiguration = registerAs('jwt', () => ({
   secret: process.env.JWT_SECRET,
   expiresIn: process.env.JWT_EXPIRES_IN,
+}));
+
+export const jwtRefreshConfiguration = registerAs('jwtRefresh', () => ({
+  secret: process.env.JWT_REFRESH_SECRET,
+  expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
 }));

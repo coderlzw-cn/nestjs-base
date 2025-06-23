@@ -9,7 +9,7 @@ export interface ApiParamConfig {
   description?: string;
   required?: boolean;
   type?: string;
-  example?: any;
+  example?: unknown;
 }
 
 /**
@@ -20,8 +20,8 @@ export interface ApiQueryConfig {
   description?: string;
   required?: boolean;
   type?: string;
-  example?: any;
-  enum?: any[];
+  example?: unknown;
+  enum?: string[];
 }
 
 /**
@@ -49,42 +49,141 @@ export interface PaginationConfig {
 }
 
 /**
+ * 响应类型配置
+ */
+export interface ResponseConfig<TModel = any> {
+  type?: Type<TModel>;
+  isArray?: boolean;
+  schema?: Record<string, unknown>;
+  description?: string;
+  status?: number;
+}
+
+/**
  * 完整的API装饰器配置
  */
-export interface ApiEndpointConfig<TModel = any> {
+export interface ApiEndpointConfig<TModel = any, TCreateDto = any, TUpdateDto = any> {
   summary: string;
   description?: string;
   tags?: string[];
   params?: ApiParamConfig[];
   queries?: ApiQueryConfig[];
   headers?: ApiHeaderConfig[];
-  body?: Type<TModel>;
-  response?: Type<TModel>;
-  status?: number;
-  responseDescription?: string;
+  body?: Type<TCreateDto> | Type<TUpdateDto>;
+  response?: ResponseConfig<TModel>;
   deprecated?: boolean;
   pagination?: PaginationConfig;
+  responseDescription?: string;
+  status?: number;
 }
 
 /**
- * 完整的API端点装饰器
- * 将 ApiOperation、ApiParam、ApiResponse、ApiBody 等装饰器结合在一起
- * @param config 装饰器配置
- * @returns 装饰器
- * @example
- * @ApiEndpoint({
- *   summary: '获取用户信息',
- *   description: '根据用户ID获取用户详细信息',
- *   tags: ['用户管理'],
- *   params: [
- *     { name: 'id', description: '用户ID', type: 'number', example: 1 }
- *   ],
- *   response: User,
- *   status: 200,
- *   responseDescription: '获取用户成功'
- * })
+ * 创建标准响应 schema
  */
-export const ApiEndpoint = (config: ApiEndpointConfig) => {
+function createResponseSchema(responseConfig: ResponseConfig, isPaginated = false) {
+  const { type, isArray, schema, status = 200 } = responseConfig;
+
+  if (isPaginated) {
+    return {
+      allOf: [
+        {
+          properties: {
+            code: { type: 'number', example: status },
+            message: { type: 'string', example: 'Success' },
+            data: {
+              type: 'object',
+              properties: {
+                list: {
+                  type: 'array',
+                  items: type ? { $ref: getSchemaPath(type) } : { type: 'object' },
+                },
+                total: { type: 'number', example: 100 },
+                page: { type: 'number', example: 1 },
+                pageSize: { type: 'number', example: 10 },
+                pages: { type: 'number', example: 10 },
+              },
+            },
+          },
+        },
+      ],
+    };
+  }
+
+  if (schema) {
+    return {
+      allOf: [
+        {
+          properties: {
+            code: { type: 'number', example: status },
+            message: { type: 'string', example: 'Success' },
+            data: schema,
+          },
+        },
+      ],
+    };
+  }
+
+  if (type) {
+    const dataSchema: Record<string, unknown> = isArray ? { type: 'array', items: { $ref: getSchemaPath(type) } } : { $ref: getSchemaPath(type) };
+
+    return {
+      allOf: [
+        {
+          properties: {
+            code: { type: 'number', example: status },
+            message: { type: 'string', example: 'Success' },
+            data: dataSchema,
+          },
+        },
+      ],
+    };
+  }
+
+  return {
+    properties: {
+      code: { type: 'number', example: status },
+      message: { type: 'string', example: 'Success' },
+      data: { type: 'object', example: {} },
+    },
+  };
+}
+
+// 常见错误响应
+const commonErrorResponses = [
+  {
+    status: 400,
+    description: '请求参数错误',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Bad Request' },
+        errors: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  },
+  {
+    status: 401,
+    description: '未授权',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  },
+  {
+    status: 500,
+    description: '服务器内部错误',
+    schema: {
+      properties: {
+        code: { type: 'number', example: 500 },
+        message: { type: 'string', example: 'Internal Server Error' },
+      },
+    },
+  },
+];
+
+export const ApiEndpoint = <TModel = any, TCreateDto = any, TUpdateDto = any>(config: ApiEndpointConfig<TModel, TCreateDto, TUpdateDto>) => {
   const decorators: (ClassDecorator | MethodDecorator | PropertyDecorator)[] = [];
 
   // ApiOperation
@@ -97,6 +196,20 @@ export const ApiEndpoint = (config: ApiEndpointConfig) => {
     }),
   );
 
+  // ApiHeader
+  if (config.headers && config.headers.length > 0) {
+    config.headers.forEach((header) => {
+      decorators.push(
+        ApiHeader({
+          name: header.name,
+          description: header.description,
+          required: header.required ?? false,
+          example: header.example,
+        }),
+      );
+    });
+  }
+
   // ApiParam
   if (config.params && config.params.length > 0) {
     config.params.forEach((param) => {
@@ -105,7 +218,7 @@ export const ApiEndpoint = (config: ApiEndpointConfig) => {
           name: param.name,
           description: param.description,
           required: param.required ?? true,
-          type: param.type as any,
+          type: param.type,
           example: param.example,
         }),
       );
@@ -113,58 +226,9 @@ export const ApiEndpoint = (config: ApiEndpointConfig) => {
   }
 
   // ApiQuery - 包括分页参数
-  const queries = [...(config.queries || [])];
+  const queries: ApiQueryConfig[] = [...(config.queries || [])];
 
   // 如果启用了分页，自动添加分页查询参数
-  if (config.pagination?.enabled) {
-    const pageParam = config.pagination.pageParam || 'page';
-    const limitParam = config.pagination.limitParam || 'limit';
-    const searchParam = config.pagination.searchParam || 'search';
-    const sortParam = config.pagination.sortParam || 'sort';
-
-    // 检查是否已经存在分页参数，避免重复
-    const existingParams = new Set(queries.map((q) => q.name));
-
-    if (!existingParams.has(pageParam)) {
-      queries.push({
-        name: pageParam,
-        description: '页码',
-        type: 'number',
-        example: config.pagination.defaultPage || 1,
-        required: false,
-      });
-    }
-
-    if (!existingParams.has(limitParam)) {
-      queries.push({
-        name: limitParam,
-        description: '每页数量',
-        type: 'number',
-        example: config.pagination.defaultLimit || 10,
-        required: false,
-      });
-    }
-
-    if (!existingParams.has(searchParam)) {
-      queries.push({
-        name: searchParam,
-        description: '搜索关键词',
-        type: 'string',
-        example: '',
-        required: false,
-      });
-    }
-
-    if (!existingParams.has(sortParam)) {
-      queries.push({
-        name: sortParam,
-        description: '排序字段',
-        type: 'string',
-        example: 'createdAt',
-        required: false,
-      });
-    }
-  }
 
   if (queries.length > 0) {
     queries.forEach((query) => {
@@ -181,20 +245,6 @@ export const ApiEndpoint = (config: ApiEndpointConfig) => {
     });
   }
 
-  // ApiHeader
-  if (config.headers && config.headers.length > 0) {
-    config.headers.forEach((header) => {
-      decorators.push(
-        ApiHeader({
-          name: header.name,
-          description: header.description,
-          required: header.required ?? false,
-          example: header.example,
-        }),
-      );
-    });
-  }
-
   // ApiBody
   if (config.body) {
     decorators.push(
@@ -205,88 +255,36 @@ export const ApiEndpoint = (config: ApiEndpointConfig) => {
     );
   }
 
+  // 处理响应配置
+  const responseConfig = config.response || {};
+  const status = responseConfig.status || config.status || 200;
+  const description = responseConfig.description || config.responseDescription || '操作成功';
+
   // ApiResponse - 根据是否启用分页生成不同的响应
   if (config.pagination?.enabled) {
     // 分页响应
     decorators.push(
       ApiResponse({
-        status: config.status || 200,
-        description: config.responseDescription || '操作成功',
-        schema: {
-          allOf: [
-            {
-              properties: {
-                code: { type: 'number', example: config.status || 200 },
-                message: { type: 'string', example: 'Success' },
-                data: {
-                  type: 'object',
-                  properties: {
-                    list: {
-                      type: 'array',
-                      items: config.response ? { $ref: getSchemaPath(config.response) } : { type: 'object' },
-                    },
-                    total: { type: 'number', example: 100 },
-                    page: { type: 'number', example: config.pagination.defaultPage || 1 },
-                    pageSize: { type: 'number', example: config.pagination.defaultLimit || 10 },
-                    pages: { type: 'number', example: 10 },
-                  },
-                },
-              },
-            },
-          ],
-        },
-      }),
-    );
-  } else if (config.response) {
-    // 普通响应
-    decorators.push(
-      ApiResponse({
-        status: config.status || 200,
-        description: config.responseDescription || '操作成功',
-        schema: {
-          allOf: [
-            {
-              properties: {
-                code: { type: 'number', example: config.status || 200 },
-                message: { type: 'string', example: 'Success' },
-                data: { $ref: getSchemaPath(config.response) },
-              },
-            },
-          ],
-        },
+        status,
+        description,
+        schema: createResponseSchema(responseConfig, true),
       }),
     );
   } else {
-    // 默认成功响应
+    // 普通响应
     decorators.push(
       ApiResponse({
-        status: config.status || 200,
-        description: config.responseDescription || '操作成功',
-        schema: {
-          properties: {
-            code: { type: 'number', example: config.status || 200 },
-            message: { type: 'string', example: 'Success' },
-            data: { type: 'object', example: {} },
-          },
-        },
+        status,
+        description,
+        schema: createResponseSchema(responseConfig, false),
       }),
     );
   }
 
   // 添加常见的错误响应
-  decorators.push(
-    ApiResponse({
-      status: 400,
-      description: '请求参数错误',
-      schema: {
-        properties: {
-          code: { type: 'number', example: 400 },
-          message: { type: 'string', example: 'Bad Request' },
-          errors: { type: 'array', items: { type: 'string' } },
-        },
-      },
-    }),
-  );
+  commonErrorResponses.forEach((error) => {
+    decorators.push(ApiResponse(error));
+  });
 
   return applyDecorators(...decorators);
 };
