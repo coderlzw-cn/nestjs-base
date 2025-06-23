@@ -28,7 +28,7 @@ export class UserService {
     const { page, pageSize } = findUserDto;
     const condition = {
       where: {
-        // id: Not(user.id),
+        id: Not(user.id),
         username: findUserDto.username ? Like(`%${findUserDto.username}%`) : undefined,
       },
     };
@@ -42,7 +42,7 @@ export class UserService {
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.userRepository.findOne({ where: { id }, relations: ['roles.role'] });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -50,20 +50,8 @@ export class UserService {
   }
 
   findByUsernameOrEmail(value: string) {
-    this.userRepository
-      .findOne({
-        where: [{ username: value }, { email: value }],
-        relations: ['userRoles.role'],
-      })
-      .then((user) => {
-        console.log(user);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
     return this.userRepository.findOne({
       where: [{ username: value }, { email: value }],
-      relations: ['userRoles.role'],
     });
   }
 

@@ -90,7 +90,10 @@ export class AuthService {
     const promise = this.userService.findOne(userid);
     return from(promise).pipe(
       map((user) => {
-        return user;
+        return {
+          ...user,
+          roles: user.roles.map((role) => role.role),
+        };
       }),
       catchError((error) => {
         this.logger.error('获取用户信息失败', error);

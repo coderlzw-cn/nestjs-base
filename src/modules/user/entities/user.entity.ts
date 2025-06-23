@@ -55,18 +55,12 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  @ApiProperty({
-    description: '创建时间',
-    example: '2024-01-01T00:00:00.000Z',
-  })
-  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
+  @ApiProperty({ description: '创建时间', example: '2024-01-01T00:00:00.000Z' })
+  @CreateDateColumn({ name: 'created_at', nullable: true, type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
   createdAt: Date;
 
-  @ApiProperty({
-    description: '更新时间',
-    example: '2024-01-01T00:00:00.000Z',
-  })
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+  @ApiProperty({ description: '更新时间', example: '2024-01-01T00:00:00.000Z' })
+  @UpdateDateColumn({ name: 'updated_at', nullable: true, type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)' })
   updatedAt: Date;
 
   // 角色关联 - 通过 UserRole 中间表
