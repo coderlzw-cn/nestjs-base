@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { catchError, from, map } from 'rxjs';
+import { FindOptionsWhere, Like, Repository } from 'typeorm';
 import { UserRole } from '../../role/entities/user-role.entity';
+import { FindPermissionDto } from '../dto/find-permission.dto';
 import { Permission } from '../entities/permission.entity';
 
 @Injectable()
 export class PermissionService {
+  private readonly logger = new Logger(PermissionService.name);
   constructor(
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,
@@ -20,56 +23,104 @@ export class PermissionService {
   }
 
   // 获取所有权限
-  async findAllPermissions(): Promise<Permission[]> {
-    return await this.permissionRepository.find();
+  findAllPermissions(findPermissionDto: FindPermissionDto) {
+    const { page, pageSize } = findPermissionDto;
+    const promise = this.permissionRepository.findAndCount({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      order: {
+        createdAt: 'DESC',
+      },
+      where: {
+        name: findPermissionDto.name ? Like(`%${findPermissionDto.name}%`) : undefined,
+      },
+    });
+    return from(promise).pipe(
+      map(([permissions, total]) => ({
+        data: permissions,
+        total,
+        page,
+        pageSize,
+        pages: Math.ceil(total / pageSize),
+      })),
+      catchError((error) => {
+        this.logger.error('获取权限列表失败', error);
+        throw new InternalServerErrorException('获取权限列表失败');
+      }),
+    );
   }
 
   // 根据ID获取权限
-  async findPermissionById(id: string): Promise<Permission | null> {
-    return await this.permissionRepository.findOne({
+  findPermissionById(id: string) {
+    const promise = this.permissionRepository.findOne({
       where: { id },
     });
+
+    return from(promise).pipe(
+      map((permission) => permission),
+      catchError((error) => {
+        this.logger.error('获取权限失败', error);
+        throw new InternalServerErrorException('获取权限失败');
+      }),
+    );
   }
 
   // 更新权限
-  async updatePermission(id: string, permissionData: Partial<Permission>): Promise<Permission | null> {
-    await this.permissionRepository.update(id, permissionData);
-    return await this.findPermissionById(id);
+  updatePermission(id: string, permissionData: Partial<Permission>) {
+    this.logger.log(`更新权限: ${id}`, permissionData);
+    const promise = this.permissionRepository.update(id, permissionData);
+    return from(promise).pipe(
+      map(() => this.findPermissionById(id)),
+      catchError((error: Error) => {
+        console.log(error.name, error.message);
+        this.logger.error(`更新权限失败 ${error.message}`);
+        throw new InternalServerErrorException('更新权限失败');
+      }),
+    );
   }
 
   // 删除权限
-  async deletePermission(id: string): Promise<void> {
-    await this.permissionRepository.update(id, { isActive: false });
+  deletePermission(id: string) {
+    const promise = this.permissionRepository.update(id, { isActive: false });
+    return from(promise).pipe(
+      map(() => this.findPermissionById(id)),
+      catchError((error: Error) => {
+        this.logger.error(`删除权限失败 ${error.message}`);
+        throw new InternalServerErrorException('删除权限失败');
+      }),
+    );
   }
 
-  // // 用户权限管理
-  // async getUserPermissions(userId: string): Promise<Permission[]> {
-  //   const userRoles = await this.userRoleRepository.find({
-  //     where: { userId },
-  //     relations: ['role.permissions.permission'],
-  //   });
+  // 用户权限管理
+  async getUserPermissions(userId: string) {
+    const userRoles = await this.userRoleRepository.find({
+      where: { userId },
+      relations: ['role.rolePermissions.permission'],
+    });
 
-  //   const permissions = new Set<Permission>();
-  //   for (const userRole of userRoles) {
-  //     if (userRole.role?.permissions) {
-  //       for (const rolePermission of userRole.role.permissions) {
-  //         if (rolePermission.permission) {
-  //           permissions.add(rolePermission.permission);
-  //         }
-  //       }
-  //     }
-  //   }
+    const permissions = new Set<Permission>();
+    for (const userRole of userRoles) {
+      if (userRole.role?.rolePermissions) {
+        for (const rolePermission of userRole.role.rolePermissions) {
+          if (rolePermission.permission) {
+            permissions.add(rolePermission.permission);
+          }
+        }
+      }
+    }
 
-  //   return Array.from(permissions);
-  // }
+    return Array.from(permissions);
+  }
 
-  // async hasPermission(userId: string, permissionName: string): Promise<boolean> {
-  //   const permissions = await this.getUserPermissions(userId);
-  //   return permissions.some((p) => p.name === permissionName && p.isActive);
-  // }
+  async hasPermission(userId: string, permissionName: string) {
+    const permissions = await this.getUserPermissions(userId);
+    console.log(permissions, 'permissions');
+
+    return permissions.some((p) => p.name === permissionName && p.isActive);
+  }
 
   // // 权限检查
-  // async checkUserPermissions(userId: string, requiredPermissions: string[]): Promise<boolean> {
+  // async checkUserPermissions(userId: string, requiredPermissions: string[]){
   //   const userPermissions = await this.getUserPermissions(userId);
   //   const userPermissionNames = userPermissions.map((p) => p.name);
 
@@ -95,7 +146,7 @@ export class PermissionService {
   // /**
   //  * 获取权限及其关联的角色信息
   //  */
-  // async findPermissionWithRoles(permissionId: string): Promise<Permission | null> {
+  // async findPermissionWithRoles(permissionId: string) {
   //   return await this.permissionRepository.findOne({
   //     where: { id: permissionId, isActive: true },
   //     relations: ['rolePermissions.role'],

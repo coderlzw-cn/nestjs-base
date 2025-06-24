@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Permission } from 'src/modules/permission/entities/permission.entity';
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Role } from './role.entity';
+import { Permission } from '../../permission/entities/permission.entity';
 
 /**
  * 角色权限关联实体

@@ -1,21 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { RolePermission } from '../../role/entities/role-permission.entity';
-
-export enum PermissionType {
-  READ = 'read',
-  WRITE = 'write',
-  DELETE = 'delete',
-  ADMIN = 'admin',
-}
-
-export enum ResourceType {
-  USER = 'user',
-  ROLE = 'role',
-  PERMISSION = 'permission',
-  AUTH = 'auth',
-  SYSTEM = 'system',
-}
+import { PermissionType, ResourceType } from '../../../common/constants/enum.constants';
 
 @Entity('permissions')
 export class Permission {

@@ -1,16 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TransformInterceptor } from 'src/common/interceptors/transform.interceptor';
 import { Like, Not, Repository } from 'typeorm';
 import { SignUpDto } from '../auth/dto/sign-up.dto';
+import { PermissionService } from '../permission/services/permission.service';
 import { FindUserDto } from './dto/find-user.dto';
 import { User } from './entities/user.entity';
+import { TransformInterceptor } from '../../common/interceptors/transform.interceptor';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly permissionService: PermissionService,
   ) {}
 
   /**

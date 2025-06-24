@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
-import { mysqlConfiguration, mysqlConfigurationValidationSchema } from 'src/config/mysql.config';
+import { mysqlConfiguration, mysqlConfigurationValidationSchema } from '../config/mysql.config';
 
 const envFilePath = process.env.NODE_ENV === 'dev' ? ['.env.local', '.env.dev'] : ['.env.local', '.env.prod'];
 

@@ -57,6 +57,19 @@ export class RoleService {
   }
 
   // 用户角色管理
+  async getUserRoles(userId: string): Promise<Role[]> {
+    const userRoles = await this.userRoleRepository.find({
+      where: { userId },
+      relations: ['role'],
+    });
+    return userRoles.map((ur) => ur.role).filter(Boolean);
+  }
+
+  async hasRole(userId: string, roleName: string): Promise<boolean> {
+    const roles = await this.getUserRoles(userId);
+    return roles.some((r) => r.name === roleName && r.isActive);
+  }
+
   // async assignRoleToUser(userId: string, roleId: string): Promise<UserRole> {
   //   // 检查是否已经分配
   //   const existing = await this.userRoleRepository.findOne({
@@ -73,19 +86,6 @@ export class RoleService {
 
   // async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
   //   await this.userRoleRepository.delete({ userId, roleId });
-  // }
-
-  // async getUserRoles(userId: string) {
-  //   const userRoles = await this.userRoleRepository.find({
-  //     where: { userId },
-  //     relations: ['role'],
-  //   });
-  //   return userRoles.map((ur) => ur.role).filter(Boolean);
-  // }
-
-  // async hasRole(userId: string, roleName: string): Promise<boolean> {
-  //   const roles = await this.getUserRoles(userId);
-  //   return roles.some((r) => r.name === roleName && r.isActive);
   // }
 
   // // 角色权限管理

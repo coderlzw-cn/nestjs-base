@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNumber, IsPositive } from 'class-validator';
+import { IsPositive } from 'class-validator';
 
 export class PaginationDto {
   @ApiProperty({ description: '当前页码', example: 1 })

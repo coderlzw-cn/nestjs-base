@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
-import { PermissionType, ResourceType } from '../entities/permission.entity';
+import { PermissionType, ResourceType } from '../../../common/constants/enum.constants';
 
 export class CreatePermissionDto {
   @ApiProperty({

@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
 import { instanceToPlain } from 'class-transformer';
 import { catchError, from, map, of } from 'rxjs';
-import { jwtRefreshConfiguration } from 'src/config/jwt.config';
+import { jwtRefreshConfiguration } from '../../config/jwt.config';
 import { User } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -31,8 +31,6 @@ export class AuthService {
   }
 
   signIn(user: User) {
-    console.log(user);
-
     return of(user).pipe(
       map((user) => {
         const plainUser = instanceToPlain(user);
@@ -48,7 +46,6 @@ export class AuthService {
       }),
       catchError((error) => {
         this.logger.error('登录失败', error);
-
         throw new InternalServerErrorException('登录失败');
       }),
     );

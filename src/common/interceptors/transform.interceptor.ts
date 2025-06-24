@@ -1,4 +1,5 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor, Type } from '@nestjs/common';
+import { getSchemaPath } from '@nestjs/swagger';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -90,3 +91,14 @@ export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> 
     );
   }
 }
+
+export const TransformSchema = <T>(type: Type<T>) => {
+  return {
+    type: 'object',
+    properties: {
+      message: { type: 'string', example: 'success' },
+      code: { type: 'number', example: 200 },
+      data: { $ref: getSchemaPath(type) },
+    },
+  };
+};

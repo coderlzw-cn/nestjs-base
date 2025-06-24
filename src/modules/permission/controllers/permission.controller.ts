@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiEndpoint } from '../../../common/decorators/api-response.decorator';
+import { FindPermissionDto } from '../dto/find-permission.dto';
 import { Permission } from '../entities/permission.entity';
 import { PermissionService } from '../services/permission.service';
 
@@ -25,13 +26,15 @@ export class PermissionController {
   @ApiEndpoint({
     summary: '获取所有权限',
     response: {
+      status: 200,
+      description: '权限列表',
       type: Permission,
       isArray: true,
     },
   })
   @Get()
-  findAllPermissions() {
-    return this.permissionService.findAllPermissions();
+  findAllPermissions(@Query() findPermissionDto: FindPermissionDto) {
+    return this.permissionService.findAllPermissions(findPermissionDto);
   }
 
   @ApiEndpoint({
@@ -54,7 +57,7 @@ export class PermissionController {
     },
   })
   @Put(':id')
-  updatePermission(@Param('id') id: string, @Body() permissionData: Partial<Permission>) {
+  updatePermission(@Param('id') id: string, @Body() permissionData: Permission) {
     return this.permissionService.updatePermission(id, permissionData);
   }
 

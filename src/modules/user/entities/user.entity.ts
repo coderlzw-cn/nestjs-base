@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import bcrypt from 'bcrypt';
 import { Exclude } from 'class-transformer';
-import { UserRole } from 'src/modules/role/entities/user-role.entity';
 import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { UserRole } from '../../role/entities/user-role.entity';
 
 @Entity('users')
 export class User {
@@ -64,6 +64,11 @@ export class User {
   updatedAt: Date;
 
   // 角色关联 - 通过 UserRole 中间表
+  @ApiProperty({
+    description: '用户角色关联',
+    type: () => [UserRole],
+    isArray: true,
+  })
   @OneToMany(() => UserRole, (userRole) => userRole.user)
   roles: UserRole[];
 

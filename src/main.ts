@@ -31,9 +31,7 @@ const swaggerBootstrap = (app: INestApplication, env: string) => {
     .setContact('John Doe', 'https://github.com/johndoe', 'john.doe@example.com')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerOptions, {
-    // extraModels: [User, AuthProviders, Role, Permission, UserRole, RolePermission], // 明确包含所有实体
-  });
+  const document = SwaggerModule.createDocument(app, swaggerOptions);
   SwaggerModule.setup('swagger', app, document, {
     raw: env === 'dev',
     ui: env === 'dev',
@@ -88,7 +86,7 @@ async function bootstrap() {
 
   // 全局拦截器
   // app.useGlobalInterceptors(new RetryInterceptor()); // 重试拦截器
-  app.useGlobalInterceptors(new TransformInterceptor()); // 转换拦截器
+  // app.useGlobalInterceptors(new TransformInterceptor()); // 转换拦截器
   app.useGlobalInterceptors(new TimeoutInterceptor()); // 超时拦截器
   // 全局过滤器
   app.useGlobalFilters(new AllExceptionsFilter(httpAdapter)); // 全局异常过滤器

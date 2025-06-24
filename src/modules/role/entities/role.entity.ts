@@ -2,13 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { RolePermission } from './role-permission.entity';
 import { UserRole } from './user-role.entity';
-
-export enum RoleType {
-  SUPER_ADMIN = 'super_admin',
-  ADMIN = 'admin',
-  USER = 'user',
-  GUEST = 'guest',
-}
+import { RoleType } from '../../../common/constants/enum.constants';
 
 @Entity('roles')
 export class Role {

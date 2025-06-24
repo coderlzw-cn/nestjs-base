@@ -1,11 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-
-export enum AuthProvider {
-  GOOGLE = 'google',
-  GITHUB = 'github',
-  WECHAT = 'wechat',
-}
+import { AuthProvider } from '../../../common/constants/enum.constants';
 
 @Entity('auth_providers')
 export class AuthProviders {
