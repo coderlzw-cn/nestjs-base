@@ -8,6 +8,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
+import { WsAdapter } from '@nestjs/platform-ws';
 
 declare const module: {
   hot: {
@@ -39,7 +40,7 @@ const swaggerBootstrap = (app: INestApplication, env: string) => {
     swaggerOptions: {
       persistAuthorization: true, // 持久化授权
       displayRequestDuration: true, // 显示请求耗时
-      displayOperationId: true, // 显示操作ID
+      // displayOperationId: true, // 显示操作ID
       displayResponseHeaders: true, // 显示响应头
       tryItOutEnabled: true, // 启用Try It Out
       requestSnippetsEnabled: true, // 启用请求片段
@@ -69,6 +70,9 @@ async function bootstrap() {
     origin: true, // 或指定 ['http://localhost:3000']
     credentials: true,
   });
+
+  app.useWebSocketAdapter(new WsAdapter(app));
+
   // 全局前缀
   app.setGlobalPrefix(prefix);
 

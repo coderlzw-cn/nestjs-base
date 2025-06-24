@@ -12,6 +12,7 @@ import { SignUpDto } from './dto/sign-up.dto';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
@@ -32,12 +33,12 @@ export class AuthService {
 
   signIn(user: User) {
     return of(user).pipe(
-      map((user) => {
+      map(async (user) => {
         const plainUser = instanceToPlain(user);
         const accessToken = this.jwtService.sign(plainUser);
         const refreshToken = this.jwtService.sign(plainUser, {
-          secret: jwtRefreshConfiguration().secret,
-          expiresIn: jwtRefreshConfiguration().expiresIn,
+          secret: (await jwtRefreshConfiguration()).secret,
+          expiresIn: (await jwtRefreshConfiguration()).signOptions?.expiresIn,
         });
         return {
           accessToken,
@@ -51,17 +52,17 @@ export class AuthService {
     );
   }
 
-  refreshToken(refreshTokenDto: RefreshTokenDto) {
-    const user = this.jwtService.verify<User>(refreshTokenDto.refreshToken, { secret: jwtRefreshConfiguration().secret });
+  async refreshToken(refreshTokenDto: RefreshTokenDto) {
+    const user = this.jwtService.verify<User>(refreshTokenDto.refreshToken, { secret: (await jwtRefreshConfiguration()).secret });
     if (!user) {
       throw new UnauthorizedException('无效的刷新令牌');
     }
     return of(user).pipe(
-      map((user) => {
+      map(async (user) => {
         const accessToken = this.jwtService.sign(user);
         const refreshToken = this.jwtService.sign(user, {
-          secret: jwtRefreshConfiguration().secret,
-          expiresIn: jwtRefreshConfiguration().expiresIn,
+          secret: (await jwtRefreshConfiguration()).secret,
+          expiresIn: (await jwtRefreshConfiguration()).signOptions?.expiresIn,
         });
         return {
           accessToken,

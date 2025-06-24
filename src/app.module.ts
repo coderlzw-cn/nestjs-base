@@ -9,8 +9,10 @@ import { PermissionModule } from './modules/permission/permission.module';
 import { RoleModule } from './modules/role/role.module';
 import { UserModule } from './modules/user/user.module';
 import { NestConfigModule } from './shared/nest-config.module';
-import { NestDatabaseModule } from './shared/nest-database.module';
 import { NestJwtModule } from './shared/nest-jwt.module';
+import { NestDatabaseModule } from './shared/nest-mysql.module';
+import { GatewaysModule } from './gateways/gateways.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { NestJwtModule } from './shared/nest-jwt.module';
     AuthModule,
     RoleModule,
     PermissionModule,
+    GatewaysModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [

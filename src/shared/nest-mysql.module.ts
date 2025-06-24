@@ -7,8 +7,8 @@ import { mysqlConfiguration } from '../config/mysql.config';
   imports: [
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule.forFeature(mysqlConfiguration)],
-      useFactory: (configuration: ConfigType<typeof mysqlConfiguration>) => configuration,
       inject: [mysqlConfiguration.KEY],
+      useFactory: (configuration: ConfigType<typeof mysqlConfiguration>) => configuration,
     }),
   ],
 })
