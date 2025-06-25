@@ -1,7 +1,3 @@
-import { ConfigurableModuleBuilder, Module } from '@nestjs/common';
-import { UdpController } from './controllers/udp.controller';
-import { UdpService } from './services/udp.service';
-
 export interface UdpModuleOptions {
   /**
    * 是否启用 UDP 功能
@@ -45,22 +41,3 @@ export interface UdpModuleOptions {
    */
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
 }
-
-export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } = new ConfigurableModuleBuilder<UdpModuleOptions>()
-  .setExtras(
-    {
-      isGlobal: false,
-    },
-    (definition, extras) => ({
-      ...definition,
-      global: extras.isGlobal,
-    }),
-  )
-  .build();
-
-@Module({
-  providers: [UdpService],
-  controllers: [UdpController],
-  exports: [UdpService],
-})
-export class NestUdpModule extends ConfigurableModuleClass {}

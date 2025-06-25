@@ -1,79 +1,43 @@
-import { ConfigurableModuleBuilder, Module } from '@nestjs/common';
-import { TcpController } from './controllers/tcp.controller';
-import { TcpService } from './services/tcp.service';
-
-export interface TcpModuleOptions {
-  /**
-   * 是否启用 TCP 功能
-   * @default true
-   */
-  enabled?: boolean;
-
-  /**
-   * 默认服务器配置
-   */
-  defaultServer?: {
-    port: number;
-    host?: string;
-    backlog?: number;
-  };
-
-  /**
-   * 默认客户端配置
-   */
-  defaultClient?: {
-    host: string;
-    port: number;
-    timeout?: number;
-    keepAlive?: boolean;
-  };
-
-  /**
-   * 是否自动启动默认服务器
-   * @default false
-   */
-  autoStartServer?: boolean;
-
-  /**
-   * 是否自动连接默认客户端
-   * @default false
-   */
-  autoConnectClient?: boolean;
-
-  /**
-   * 日志级别
-   * @default 'info'
-   */
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
-
-  /**
-   * 连接超时时间（毫秒）
-   * @default 30000
-   */
-  connectionTimeout?: number;
-
-  /**
-   * 最大连接数
-   * @default 1000
-   */
-  maxConnections?: number;
-}
-
-export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } = new ConfigurableModuleBuilder<TcpModuleOptions>()
-  .setExtras(
-    {
-      isGlobal: false,
-    },
-    (definition, extras) => ({
-      ...definition,
-      global: extras.isGlobal,
-    }),
-  )
-  .build();
+import { Module } from '@nestjs/common';
+import { TcpModule } from './tcp/tcp.module';
+import { TcpService } from './tcp/tcp.service';
 
 @Module({
-  providers: [TcpService],
-  controllers: [TcpController],
-  exports: [TcpService],
+  imports: [
+    TcpModule.register({
+      // defaultClient: {
+      //   host: '127.0.0.1',
+      //   port: 4000,
+      // },
+      // clients: {
+      //   'redis-client': {
+      //     host: 'localhost',
+      //     port: 4000,
+      //     // autoConnect: true,
+      //     reconnectInterval: 5000,
+      //     maxReconnectAttempts: 10,
+      //   },
+      //   'database-client': {
+      //     host: 'localhost',
+      //     port: 4000,
+      //     // autoConnect: true,
+      //     timeout: 10000,
+      //   },
+      // },
+      // autoConnectClient: true,
+    }),
+  ],
 })
-export class NestTcpModule extends ConfigurableModuleClass {}
+export class NestTcpModule {
+  constructor(private readonly tcpService: TcpService) {
+    // setInterval(() => {
+    //   // 基于你的配置，这些名称会被自动推断
+    //   this.tcpService.sendToClient('default', 'hello world');
+    //   this.tcpService.sendToClient('redis-client', 'hello redis');
+    //   this.tcpService.sendToClient('database-client', 'hello db');
+    // }, 3000);
+    // this.tcpService.on('clientData', (message: ClientMessage) => {
+    //   console.log(JSON.stringify({ ...message, data: message.data.toString() }));
+    // });
+  }
+}

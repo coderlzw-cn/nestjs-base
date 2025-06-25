@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { LocalStrategy } from './strategy/local.strategy';
+import { TcpModule } from '../../shared/tcp/tcp.module';
 
 @Module({
   imports: [
@@ -17,6 +18,13 @@ import { LocalStrategy } from './strategy/local.strategy';
       imports: [ConfigModule.forFeature(jwtConfiguration)],
       inject: [jwtConfiguration.KEY],
       useFactory: (configuration: ConfigType<typeof jwtConfiguration>) => configuration,
+    }),
+    TcpModule.register({
+      defaultClient: {
+        host: '127.0.0.1',
+        port: 4000,
+      },
+      autoConnectClient: true,
     }),
   ],
   controllers: [AuthController],

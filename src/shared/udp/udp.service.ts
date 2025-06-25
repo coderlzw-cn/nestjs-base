@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import * as dgram from 'dgram';
 import { EventEmitter } from 'events';
-import { MODULE_OPTIONS_TOKEN, UdpModuleOptions } from '../nest-udp.module';
+import { UdpModuleOptions } from './udp-options.interface';
+import { MODULE_OPTIONS_TOKEN } from './upd.module-definition';
 
 export interface UdpServerConfig {
   port: number;
@@ -54,7 +55,7 @@ export class UdpService extends EventEmitter implements OnModuleInit, OnModuleDe
     // 自动连接默认客户端
     if (this.options.autoConnectClient && this.options.defaultClient) {
       try {
-        await this.createClient('default', this.options.defaultClient);
+        this.createClient('default', this.options.defaultClient);
         this.logger.log('Default UDP client created automatically');
       } catch (error) {
         this.logger.error('Failed to create default UDP client:', error);
@@ -151,7 +152,7 @@ export class UdpService extends EventEmitter implements OnModuleInit, OnModuleDe
    * @param config 客户端配置
    * @returns Promise<void>
    */
-  async createClient(name: string, config: UdpClientConfig): Promise<void> {
+  createClient(name: string, config: UdpClientConfig) {
     if (this.clients.has(name)) {
       throw new Error(`UDP client '${name}' already exists`);
     }

@@ -6,7 +6,6 @@ import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exception.filter';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TimeoutInterceptor } from './common/interceptors/timeout.interceptor';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { WsAdapter } from '@nestjs/platform-ws';
 

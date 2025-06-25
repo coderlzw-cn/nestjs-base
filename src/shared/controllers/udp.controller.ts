@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { UdpService } from '../services/udp.service';
+import { UdpService } from '../udp/udp.service';
 
 export class CreateUdpServerDto {
   port: number;

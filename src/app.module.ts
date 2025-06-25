@@ -4,15 +4,17 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'node:path';
 import { JwtAuthGuard } from './common/guard/jwt-auth.guard';
+import { GatewaysModule } from './gateways/gateways.module';
+import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RoleModule } from './modules/role/role.module';
 import { UserModule } from './modules/user/user.module';
 import { NestConfigModule } from './shared/nest-config.module';
 import { NestJwtModule } from './shared/nest-jwt.module';
+import { NestMailerModule } from './shared/nest-mailer.module';
 import { NestDatabaseModule } from './shared/nest-mysql.module';
-import { GatewaysModule } from './gateways/gateways.module';
-import { HealthModule } from './health/health.module';
+import { NestTcpModule } from './shared/nest-tcp.module';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { HealthModule } from './health/health.module';
     PermissionModule,
     GatewaysModule,
     HealthModule,
+    NestTcpModule,
+    NestMailerModule,
   ],
   controllers: [],
   providers: [

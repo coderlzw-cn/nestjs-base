@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { catchError, from, map } from 'rxjs';
-import { FindOptionsWhere, Like, Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { UserRole } from '../../role/entities/user-role.entity';
 import { FindPermissionDto } from '../dto/find-permission.dto';
 import { Permission } from '../entities/permission.entity';
